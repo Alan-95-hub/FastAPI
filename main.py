@@ -3,45 +3,43 @@ from typing import List
 import yaml
 
 app = FastAPI()
-
-with open("C:\\Users\\alanb\\OneDrive\\Рабочий стол\\Fast-API\\tasks.yaml", "r") as tasks_file:
+#открываем файлы tasks.yaml и buildis.yaml 
+with open("tasks.yaml", "r") as tasks_file:
     tasks = yaml.safe_load(tasks_file)["tasks"]
     
 
-with open("C:\\Users\\alanb\\OneDrive\\Рабочий стол\\Fast-API\\builds.yaml", "r") as builds_file:
+with open("builds.yaml", "r") as builds_file:
     builds = yaml.safe_load(builds_file)["builds"]
-    
-
-
+            
 @app.post("/get_tasks")
 async def get_tasks(build: str):
+    #проверка на корректность ввода build
     builds_names = []
     for i in builds:
         builds_names.append(i["name"])
-
     if build not in builds_names:
         raise HTTPException(status_code=404, detail="Build not found")
-
+    
+    #берем нужный нам build с tasks
     def get_list(build):
         for one_build in builds:
             if one_build["name"]==build:
                 return one_build
-            
-    buildings=get_list(build)
+    build_with_tasks=get_list(build)
 
-    def get_tasks(task):
-        for name_task in tasks:
-            if name_task["name"] == task:
-                return name_task
-            
-    build_tasks=[]
+    #собираем все задачи в виде двумерного списка, где первый элемент будет названия, а второй количество элементов
+    list_tasks=[]
+    def get_tasks(name_of_task):
+        for task in tasks:
+            if task["name"] == name_of_task:
+                return task
+    for name_of_task in build_with_tasks["tasks"]:
+        task = get_tasks(name_of_task)
+        list_tasks.append((task["name"], len(task["dependencies"])))
 
-    for task in buildings["tasks"]:
-        name_task1 = get_tasks(task)
-        build_tasks.append((name_task1["name"], len(name_task1["dependencies"])))
-
+    #сортируем наш массив в порядке убывания количества элементов    
+    sorted_tasks=sorted(list_tasks, key=lambda x: x[1], reverse=True)
     
-    sorted_tasks=sorted(build_tasks, key=lambda x: x[1], reverse=True)
-    
+    #выбираем только первые элементы(названия) из нашего отсортированного двумерного списка
     answer = [pair[0] for pair in sorted_tasks]
     return answer
