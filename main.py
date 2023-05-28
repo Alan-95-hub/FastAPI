@@ -5,24 +5,24 @@ import yaml
 app = FastAPI()
 #открываем файлы tasks.yaml и buildis.yaml 
 with open("tasks.yaml", "r") as tasks_file:
-    tasks = yaml.safe_load(tasks_file)["tasks"]
+    TASKS = yaml.safe_load(tasks_file)["tasks"]
     
 
 with open("builds.yaml", "r") as builds_file:
-    builds = yaml.safe_load(builds_file)["builds"]
+    BUILDS = yaml.safe_load(builds_file)["builds"]
             
 @app.post("/get_tasks")
 async def get_tasks(build: str):
     #проверка на корректность ввода build
     builds_names = []
-    for i in builds:
+    for i in BUILDS:
         builds_names.append(i["name"])
     if build not in builds_names:
         raise HTTPException(status_code=404, detail="Build not found")
     
     #берем нужный нам build с tasks
     def get_list(build):
-        for one_build in builds:
+        for one_build in BUILDS:
             if one_build["name"]==build:
                 return one_build
     build_with_tasks=get_list(build)
@@ -30,7 +30,7 @@ async def get_tasks(build: str):
     #собираем все задачи в виде двумерного списка, где первый элемент будет названия, а второй количество элементов
     list_tasks=[]
     def get_tasks(name_of_task):
-        for task in tasks:
+        for task in TASKS:
             if task["name"] == name_of_task:
                 return task
     for name_of_task in build_with_tasks["tasks"]:
